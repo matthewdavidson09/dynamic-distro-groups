@@ -2,6 +2,7 @@ package active_directory
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/go-ldap/ldap/v3"
@@ -22,8 +23,8 @@ type SyncResult struct {
 func SyncGroupByCategory(client *ldapclient.LDAPClient, category, value string, users []ADUser, dryRun bool) (int, int, error) {
 	slug := tools.Slugify(value)
 	groupCN := fmt.Sprintf("list-%s-%s", category, slug)
-	email := fmt.Sprintf("%s@giftingco.com", groupCN)
-	groupOU := "OU=Automated Groups,OU=Groups,DC=corp,DC=agiftinside,DC=com"
+	email := fmt.Sprintf("%s@%s", groupCN, os.Getenv("GROUP_EMAIL_DOMAIN"))
+	groupOU := os.Getenv("GROUP_OU")
 
 	group, err := EnsureGroupExists(client, groupCN, email, groupOU, value)
 	if err != nil {
