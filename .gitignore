@@ -1,0 +1,5 @@
+# Ignore the default .env
+.env
+
+# But don't ignore .env.sample
+!.env.sample
