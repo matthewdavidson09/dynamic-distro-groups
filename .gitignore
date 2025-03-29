@@ -1,5 +1,41 @@
-# Ignore the default .env
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go build artifacts
+/dist/
+/bin/
+/build/
+/coverage.out
+
+# Dependency directories (if using vendoring)
+vendor/
+
+# Editor/IDE configs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# Logs
+*.log
+
+# Environment files
 .env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git-specific
+*.orig
 
 # But don't ignore .env.sample
 !.env.sample
