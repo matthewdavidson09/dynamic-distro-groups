@@ -47,7 +47,15 @@ func GetUsersByFilter(
 	}
 
 	for attr, value := range filterMap {
-		filterParts = append(filterParts, fmt.Sprintf("(%s=%s)", ldap.EscapeFilter(attr), ldap.EscapeFilter(value)))
+		if strings.HasPrefix(attr, "!") || strings.HasSuffix(attr, "=*") {
+			// Pass-through custom LDAP filter fragments like "!(lastLogon=*)"
+			filterParts = append(filterParts, attr)
+		} else if value == "" {
+			// Assume user means attribute must not exist
+			filterParts = append(filterParts, fmt.Sprintf("(!(%s=*))", ldap.EscapeFilter(attr)))
+		} else {
+			filterParts = append(filterParts, fmt.Sprintf("(%s=%s)", ldap.EscapeFilter(attr), ldap.EscapeFilter(value)))
+		}
 	}
 
 	ldapFilter := fmt.Sprintf("(&%s)", strings.Join(filterParts, ""))

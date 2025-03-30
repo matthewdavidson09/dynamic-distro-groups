@@ -4,7 +4,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/matthewdavidson09/dynamic-distro-groups/internal/ldapclient"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -51,27 +50,6 @@ func mapKeysSorted(m map[string]struct{}) []string {
 	}
 	slices.Sort(keys)
 	return keys
-}
-
-// ─── Public Fetch Helpers ───
-
-func GetAllUniqueStates(enabledOnly bool) ([]string, error) {
-	client, err := ldapclient.Connect()
-	if err != nil {
-		return nil, err
-	}
-	defer client.Close()
-
-	users, err := GetUsersByFilter(client, nil, enabledOnly, true, defaultOUsToExclude())
-	if err != nil {
-		return nil, err
-	}
-
-	return GetUniqueStates(users), nil
-}
-
-func GetAllEmployees(client *ldapclient.LDAPClient) ([]ADUser, error) {
-	return GetUsersByFilter(client, nil, true, true, defaultOUsToExclude())
 }
 
 func defaultOUsToExclude() []string {

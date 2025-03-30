@@ -17,7 +17,7 @@ func main() {
 	}
 	tools.InitLogger()
 
-	dryRun := false // Set to true to skip modifying LDAP
+	dryRun := true // Set to true to skip modifying LDAP
 
 	// Connect to LDAP
 	client, err := ldapclient.Connect()
