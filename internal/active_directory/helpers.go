@@ -52,10 +52,6 @@ func mapKeysSorted(m map[string]struct{}) []string {
 	return keys
 }
 
-func defaultOUsToExclude() []string {
-	return []string{"OU=External Users", "OU=Archived Users"}
-}
-
 func isUserDisabled(uac string) bool {
 	return strings.Contains(uac, "2")
 }

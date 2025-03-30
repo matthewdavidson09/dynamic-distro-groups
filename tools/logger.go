@@ -1,8 +1,20 @@
 package tools
 
 import (
+	"fmt"
+
+	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 )
+
+type SyncMetrics struct {
+	GroupEmail    string
+	TotalUsers    int
+	ADAdded       int
+	ADRemoved     int
+	GoogleAdded   int
+	GoogleRemoved int
+}
 
 var Log = logrus.New()
 
@@ -13,9 +25,24 @@ func InitLogger() {
 		DisableColors:   false,
 		PadLevelText:    true,
 	})
-	Log.SetLevel(logrus.InfoLevel) // or DebugLevel
+	Log.SetLevel(logrus.InfoLevel)
 }
 
-func LogSyncSummary(category, name string, userCount, added, removed int) {
-	Log.Infof("[%s:%s] users=%d added=%d removed=%d", category, name, userCount, added, removed)
+func LogSyncCombined(m SyncMetrics) {
+	green := color.New(color.FgGreen).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
+	blue := color.New(color.FgCyan).SprintFunc()
+
+	adAdd := green(fmt.Sprintf("+%3d", m.ADAdded))
+	adRemove := red(fmt.Sprintf("-%3d", m.ADRemoved))
+	gsAdd := green(fmt.Sprintf("+%3d", m.GoogleAdded))
+	gsRemove := red(fmt.Sprintf("-%3d", m.GoogleRemoved))
+
+	Log.Infof(
+		"[SYNC] %-45s | Users: %4d | AD: %s / %s | Google: %s / %s",
+		blue(m.GroupEmail),
+		m.TotalUsers,
+		adAdd, adRemove,
+		gsAdd, gsRemove,
+	)
 }

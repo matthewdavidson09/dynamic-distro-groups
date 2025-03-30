@@ -29,6 +29,7 @@ type ADUser struct {
 	SAMAccountName string
 	Enabled        bool
 	UACFlags       []string
+	DirectReports  []string
 }
 
 // GetUsersByFilter returns a list of AD users based on the provided filter and criteria
@@ -63,7 +64,7 @@ func GetUsersByFilter(
 	attributes := []string{
 		"cn", "mail", "department", "distinguishedName", "st", "userAccountControl",
 		"objectGUID", "givenName", "sn", "displayName", "employeeID", "title",
-		"streetAddress", "l", "postalCode", "manager", "sAMAccountName",
+		"streetAddress", "l", "postalCode", "manager", "sAMAccountName", "directReports",
 	}
 
 	searchReq := ldap.NewSearchRequest(
@@ -110,6 +111,7 @@ func GetUsersByFilter(
 			State:          entry.GetAttributeValue("st"),
 			PostalCode:     entry.GetAttributeValue("postalCode"),
 			ManagerDN:      entry.GetAttributeValue("manager"),
+			DirectReports:  entry.GetAttributeValues("directReports"),
 			SAMAccountName: entry.GetAttributeValue("sAMAccountName"),
 			Enabled:        !isUserDisabled(entry.GetAttributeValue("userAccountControl")),
 			UACFlags:       parseUACFlags(entry.GetAttributeValue("userAccountControl")),

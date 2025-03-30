@@ -3,6 +3,8 @@ package sync
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
 
 	"github.com/matthewdavidson09/dynamic-distro-groups/tools"
 	admin "google.golang.org/api/admin/directory/v1"
@@ -43,4 +45,38 @@ func isMailboxUser(svc *admin.Service, email string) bool {
 		return false
 	}
 	return user.IsMailboxSetup
+}
+
+// BuildMailboxAllowedList checks mailboxes in parallel and returns allowed emails.
+func BuildMailboxAllowedList(svc *admin.Service, emails []string) []string {
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	allowed := make([]string, 0, len(emails))
+
+	sem := make(chan struct{}, 10) // max 10 concurrent checks
+
+	for _, rawEmail := range emails {
+		email := strings.ToLower(strings.TrimSpace(rawEmail))
+		if email == "" {
+			continue
+		}
+
+		wg.Add(1)
+		go func(email string) {
+			defer wg.Done()
+
+			sem <- struct{}{} // acquire
+			ok := isMailboxUser(svc, email)
+			<-sem // release
+
+			if ok {
+				mu.Lock()
+				allowed = append(allowed, email)
+				mu.Unlock()
+			}
+		}(email)
+	}
+
+	wg.Wait()
+	return allowed
 }

@@ -21,6 +21,7 @@ func SyncDepartments(client *ldapclient.LDAPClient, users []active_directory.ADU
 	tools.Log.Infof("Syncing %d department-based groups...", len(departments))
 
 	tools.RunWithWorkers(departments, 5, func(dept string) {
+		// 1. Collect matching users
 		var deptUsers []active_directory.ADUser
 		for _, user := range users {
 			if strings.EqualFold(strings.TrimSpace(user.Department), dept) {
@@ -33,18 +34,18 @@ func SyncDepartments(client *ldapclient.LDAPClient, users []active_directory.ADU
 			return
 		}
 
-		// 1. Sync to Active Directory
-		added, removed, err := active_directory.SyncGroupByCategory(client, "dept", dept, deptUsers, dryRun)
-		tools.LogSyncSummary("dept", dept, len(deptUsers), added, removed)
+		// 2. Create group identifiers
+		groupEmail := fmt.Sprintf("list-dept-%s@%s", tools.Slugify(dept), os.Getenv("GROUP_EMAIL_DOMAIN"))
+		groupName := fmt.Sprintf("Dept: %s", dept)
+
+		// 3. Sync to Active Directory
+		adAdded, adRemoved, err := active_directory.SyncGroupByCategory(client, "dept", dept, deptUsers, dryRun)
 		if err != nil {
 			tools.Log.WithField("dept", dept).Errorf("AD sync error: %v", err)
 			return
 		}
 
-		// 2. Build Google Group info
-		groupEmail := fmt.Sprintf("list-dept-%s@%s", tools.Slugify(dept), os.Getenv("GROUP_EMAIL_DOMAIN"))
-		groupName := fmt.Sprintf("Dept: %s", dept)
-
+		// 4. Prepare Google member list
 		var memberEmails []string
 		for _, user := range deptUsers {
 			if user.Email != "" {
@@ -52,16 +53,27 @@ func SyncDepartments(client *ldapclient.LDAPClient, users []active_directory.ADU
 			}
 		}
 
-		// 3. Sync to Google Workspace
+		// 5. Sync to Google Workspace
 		svc, err := googleclient.NewDirectoryService(ctx)
 		if err != nil {
 			tools.Log.WithField("dept", dept).Errorf("Failed to create Google Directory client: %v", err)
 			return
 		}
 
-		if err := SyncGoogleGroup(ctx, svc, groupEmail, groupName, memberEmails, dryRun); err != nil {
+		gAdded, gRemoved, err := SyncGoogleGroup(ctx, svc, groupEmail, groupName, memberEmails, dryRun)
+		if err != nil {
 			tools.Log.WithField("dept", dept).Errorf("Google group sync error: %v", err)
 		}
+
+		// 6. Combined sync summary log
+		tools.LogSyncCombined(tools.SyncMetrics{
+			GroupEmail:    groupEmail,
+			TotalUsers:    len(memberEmails),
+			ADAdded:       adAdded,
+			ADRemoved:     adRemoved,
+			GoogleAdded:   gAdded,
+			GoogleRemoved: gRemoved,
+		})
 	})
 
 	tools.Log.Infof("Finished syncing departments in %s", time.Since(start))

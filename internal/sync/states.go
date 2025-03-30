@@ -33,16 +33,14 @@ func SyncStates(client *ldapclient.LDAPClient, users []active_directory.ADUser, 
 			return
 		}
 
-		// 1. Sync AD group
-		added, removed, err := active_directory.SyncGroupByCategory(client, "state", state, stateUsers, dryRun)
-		tools.LogSyncSummary("state", state, len(stateUsers), added, removed)
-
+		// 1. Sync to Active Directory
+		adAdded, adRemoved, err := active_directory.SyncGroupByCategory(client, "state", state, stateUsers, dryRun)
 		if err != nil {
 			tools.Log.WithField("state", state).Errorf("AD sync error: %v", err)
 			return
 		}
 
-		// 2. Prepare Google group details
+		// 2. Build Google Group info
 		groupEmail := fmt.Sprintf("list-state-%s@%s", tools.Slugify(state), os.Getenv("GROUP_EMAIL_DOMAIN"))
 		groupName := fmt.Sprintf("State: %s", state)
 
@@ -53,16 +51,27 @@ func SyncStates(client *ldapclient.LDAPClient, users []active_directory.ADUser, 
 			}
 		}
 
-		// 3. Sync to Google
+		// 3. Sync to Google Workspace
 		svc, err := googleclient.NewDirectoryService(ctx)
 		if err != nil {
 			tools.Log.WithField("state", state).Errorf("Failed to create Google Directory client: %v", err)
 			return
 		}
 
-		if err := SyncGoogleGroup(ctx, svc, groupEmail, groupName, memberEmails, dryRun); err != nil {
+		gAdded, gRemoved, err := SyncGoogleGroup(ctx, svc, groupEmail, groupName, memberEmails, dryRun)
+		if err != nil {
 			tools.Log.WithField("state", state).Errorf("Google group sync error: %v", err)
 		}
+
+		// 4. Unified logging
+		tools.LogSyncCombined(tools.SyncMetrics{
+			GroupEmail:    groupEmail,
+			TotalUsers:    len(stateUsers),
+			ADAdded:       adAdded,
+			ADRemoved:     adRemoved,
+			GoogleAdded:   gAdded,
+			GoogleRemoved: gRemoved,
+		})
 	})
 
 	tools.Log.Infof("Finished syncing states in %s", time.Since(start))
