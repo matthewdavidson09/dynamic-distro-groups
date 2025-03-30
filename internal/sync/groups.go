@@ -1,4 +1,4 @@
-package adsync
+package sync
 
 import (
 	"github.com/matthewdavidson09/dynamic-distro-groups/internal/active_directory"

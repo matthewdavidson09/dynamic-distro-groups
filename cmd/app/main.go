@@ -5,8 +5,8 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/matthewdavidson09/dynamic-distro-groups/internal/active_directory"
-	"github.com/matthewdavidson09/dynamic-distro-groups/internal/adsync"
 	"github.com/matthewdavidson09/dynamic-distro-groups/internal/ldapclient"
+	"github.com/matthewdavidson09/dynamic-distro-groups/internal/sync"
 	"github.com/matthewdavidson09/dynamic-distro-groups/tools"
 )
 
@@ -17,7 +17,7 @@ func main() {
 	}
 	tools.InitLogger()
 
-	dryRun := true // Set to true to skip modifying LDAP
+	dryRun := false // Set to true to skip modifying LDAP
 
 	// Connect to LDAP
 	client, err := ldapclient.Connect()
@@ -40,6 +40,6 @@ func main() {
 
 	// Sync by department
 	start := time.Now()
-	adsync.RunAllGroupSyncs(client, allUsers, dryRun)
+	sync.RunAllGroupSyncs(client, allUsers, dryRun)
 	tools.Log.Infof("Finished syncing all groups in %s", time.Since(start))
 }
