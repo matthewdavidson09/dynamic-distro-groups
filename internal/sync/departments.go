@@ -71,7 +71,14 @@ func SyncDepartments(client *ldapclient.LDAPClient, users []active_directory.ADU
 			tools.Log.WithField("dept", dept).Errorf("Google group sync error: %v", err)
 		}
 
-		// 6. Combined sync summary log
+		// 6. Apply group settings to enforce managers-only posting
+		if err := ApplyGoogleGroupSettings(ctx, groupEmail); err != nil {
+			tools.Log.WithField("dept", dept).Errorf("Failed to apply Google group settings: %v", err)
+		} else {
+			tools.Log.WithField("dept", dept).Infof("Successfully applied Google group settings to %s", groupEmail)
+		}
+
+		// 7. Combined sync summary log
 		tools.LogSyncCombined(tools.SyncMetrics{
 			GroupEmail:    groupEmail,
 			TotalUsers:    len(memberEmails),

@@ -64,6 +64,12 @@ func SyncManagers(client *ldapclient.LDAPClient, users []active_directory.ADUser
 			tools.Log.WithField("manager", manager.SAMAccountName).Errorf("Google sync error: %v", err)
 		}
 
+		if err := ApplyGoogleGroupSettings(ctx, groupEmail); err != nil {
+			tools.Log.WithField("manager", manager.SAMAccountName).Errorf("Failed to apply Google group settings: %v", err)
+		} else {
+			tools.Log.WithField("manager", manager.SAMAccountName).Infof("Successfully applied Google group settings to %s", groupEmail)
+		}
+
 		// Unified logging
 		tools.LogSyncCombined(tools.SyncMetrics{
 			GroupEmail:    groupEmail,

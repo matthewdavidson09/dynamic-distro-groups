@@ -1,6 +1,9 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -11,6 +14,16 @@ import (
 )
 
 func main() {
+	var version = "development"
+
+	flagVersion := flag.Bool("version", false, "Print version and exit")
+	flag.Parse()
+
+	if *flagVersion {
+		fmt.Println("Version:", version)
+		os.Exit(0)
+	}
+
 	// Load environment and init logger
 	if err := godotenv.Load(".env"); err != nil {
 		tools.Log.Fatalf("Failed to load .env file: %v", err)

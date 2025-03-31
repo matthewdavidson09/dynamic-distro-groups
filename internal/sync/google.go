@@ -7,9 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/matthewdavidson09/dynamic-distro-groups/internal/googleclient"
 	"github.com/matthewdavidson09/dynamic-distro-groups/tools"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/groupssettings/v1"
+	"google.golang.org/api/option"
 )
 
 // normalizeEmail lowercases and trims whitespace for reliable comparisons.
@@ -123,29 +125,35 @@ func SyncGoogleGroup(
 }
 
 func ApplyGoogleGroupSettings(ctx context.Context, groupEmail string) error {
-	settingsService, err := groupssettings.NewService(ctx)
+	client, err := googleclient.NewImpersonatedHTTPClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create impersonated client: %w", err)
+	}
+
+	settingsService, err := groupssettings.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		return fmt.Errorf("failed to create GroupsSettings service: %w", err)
 	}
 
 	settings := &groupssettings.Groups{
-		AllowExternalMembers:     "false",
-		AllowWebPosting:          "false",
-		AllowGoogleCommunication: "false",
-		IsArchived:               "true",
-		MembersCanPostAsTheGroup: "false",
-		ShowInGroupDirectory:     "false",
-		MessageModerationLevel:   "MODERATE_NONE",
-		WhoCanContactOwner:       "ALL_IN_DOMAIN_CAN_CONTACT",
-		WhoCanAdd:                "NONE_CAN_ADD",
-		WhoCanDiscoverGroup:      "ALL_MEMBERS_CAN_DISCOVER",
-		WhoCanJoin:               "INVITED_CAN_JOIN",
-		WhoCanLeaveGroup:         "NONE_CAN_LEAVE",
-		WhoCanPostMessage:        "ALL_MANAGERS_CAN_POST",
-		WhoCanViewGroup:          "ALL_MEMBERS_CAN_VIEW",
-		WhoCanViewMembership:     "ALL_MANAGERS_CAN_VIEW",
-		WhoCanInvite:             "NONE_CAN_INVITE",
-		ReplyTo:                  "REPLY_TO_MANAGERS",
+		AllowExternalMembers:       "false",
+		AllowWebPosting:            "false",
+		AllowGoogleCommunication:   "false",
+		IncludeInGlobalAddressList: "false",
+		IsArchived:                 "true",
+		MembersCanPostAsTheGroup:   "false",
+		ShowInGroupDirectory:       "false",
+		MessageModerationLevel:     "MODERATE_NONE",
+		WhoCanContactOwner:         "ALL_IN_DOMAIN_CAN_CONTACT",
+		WhoCanAdd:                  "NONE_CAN_ADD",
+		WhoCanDiscoverGroup:        "ALL_MEMBERS_CAN_DISCOVER",
+		WhoCanJoin:                 "INVITED_CAN_JOIN",
+		WhoCanLeaveGroup:           "NONE_CAN_LEAVE",
+		WhoCanPostMessage:          "ALL_MANAGERS_CAN_POST",
+		WhoCanViewGroup:            "ALL_MEMBERS_CAN_VIEW",
+		WhoCanViewMembership:       "ALL_MANAGERS_CAN_VIEW",
+		WhoCanInvite:               "NONE_CAN_INVITE",
+		ReplyTo:                    "REPLY_TO_MANAGERS",
 	}
 
 	const maxRetries = 5

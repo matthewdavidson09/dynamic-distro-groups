@@ -63,7 +63,14 @@ func SyncAllEmployees(client *ldapclient.LDAPClient, users []active_directory.AD
 			tools.Log.Errorf("Google group sync failed: %v", err)
 		}
 
-		// 7. Unified sync summary
+		// 7. Apply group settings to enforce managers-only posting
+		if err := ApplyGoogleGroupSettings(ctx, groupEmail); err != nil {
+			tools.Log.WithField("all", memberEmails).Errorf("Failed to apply Google group settings: %v", err)
+		} else {
+			tools.Log.WithField("all", memberEmails).Infof("Successfully applied Google group settings to %s", groupEmail)
+		}
+
+		// 8. Unified sync summary
 		tools.LogSyncCombined(tools.SyncMetrics{
 			GroupEmail:    groupEmail,
 			TotalUsers:    len(memberEmails),

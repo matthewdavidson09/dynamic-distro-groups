@@ -81,6 +81,8 @@ func SyncStates(client *ldapclient.LDAPClient, users []active_directory.ADUser, 
 		// 5. Apply group settings to enforce managers-only posting
 		if err := ApplyGoogleGroupSettings(ctx, groupEmail); err != nil {
 			tools.Log.WithField("state", state).Errorf("Failed to apply Google group settings: %v", err)
+		} else {
+			tools.Log.WithField("state", state).Infof("Successfully applied Google group settings to %s", groupEmail)
 		}
 
 		// 6. Unified Logging
