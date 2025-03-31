@@ -97,3 +97,12 @@ func Slugify(input string) string {
 
 	return input
 }
+
+// MapKeys returns a slice of keys from a map[string]T
+func MapKeys[T any](m map[string]T) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}

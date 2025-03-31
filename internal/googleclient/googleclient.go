@@ -29,6 +29,7 @@ func NewDirectoryService(ctx context.Context) (*admin.Service, error) {
 	scopes := []string{
 		admin.AdminDirectoryGroupScope,
 		admin.AdminDirectoryUserScope,
+		"https://www.googleapis.com/auth/apps.groups.settings",
 	}
 
 	config, err := google.JWTConfigFromJSON(data, scopes...)

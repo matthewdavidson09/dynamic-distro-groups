@@ -20,6 +20,12 @@ func SyncStates(client *ldapclient.LDAPClient, users []active_directory.ADUser, 
 	start := time.Now()
 	tools.Log.Infof("Syncing %d state-based groups...", len(states))
 
+	// Index for quick manager detection
+	adLookup := make(map[string]active_directory.ADUser)
+	for _, u := range users {
+		adLookup[strings.ToLower(strings.TrimSpace(u.DN))] = u
+	}
+
 	tools.RunWithWorkers(states, 5, func(state string) {
 		var stateUsers []active_directory.ADUser
 		for _, user := range users {
@@ -44,26 +50,40 @@ func SyncStates(client *ldapclient.LDAPClient, users []active_directory.ADUser, 
 		groupEmail := fmt.Sprintf("list-state-%s@%s", tools.Slugify(state), os.Getenv("GROUP_EMAIL_DOMAIN"))
 		groupName := fmt.Sprintf("State: %s", state)
 
-		var memberEmails []string
+		// 3. Determine members and manager role eligibility
+		memberEmails := []string{}
+		managerEmails := map[string]bool{}
 		for _, user := range stateUsers {
-			if user.Email != "" {
-				memberEmails = append(memberEmails, strings.ToLower(user.Email))
+			email := strings.ToLower(strings.TrimSpace(user.Email))
+			if email == "" {
+				continue
+			}
+			memberEmails = append(memberEmails, email)
+
+			// If this user manages others, mark them as a manager
+			if len(user.DirectReports) > 0 {
+				managerEmails[email] = true
 			}
 		}
 
-		// 3. Sync to Google Workspace
+		// 4. Sync to Google Workspace
 		svc, err := googleclient.NewDirectoryService(ctx)
 		if err != nil {
 			tools.Log.WithField("state", state).Errorf("Failed to create Google Directory client: %v", err)
 			return
 		}
 
-		gAdded, gRemoved, err := SyncGoogleGroup(ctx, svc, groupEmail, groupName, memberEmails, dryRun)
+		gAdded, gRemoved, err := SyncGoogleGroupWithRoles(ctx, svc, groupEmail, groupName, memberEmails, managerEmails, dryRun)
 		if err != nil {
 			tools.Log.WithField("state", state).Errorf("Google group sync error: %v", err)
 		}
 
-		// 4. Unified logging
+		// 5. Apply group settings to enforce managers-only posting
+		if err := ApplyGoogleGroupSettings(ctx, groupEmail); err != nil {
+			tools.Log.WithField("state", state).Errorf("Failed to apply Google group settings: %v", err)
+		}
+
+		// 6. Unified Logging
 		tools.LogSyncCombined(tools.SyncMetrics{
 			GroupEmail:    groupEmail,
 			TotalUsers:    len(stateUsers),

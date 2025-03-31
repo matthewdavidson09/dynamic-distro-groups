@@ -10,12 +10,8 @@ import (
 
 // ─── Normalization ───
 
-func normalizeDN(dn string) string {
+func NormalizeDN(dn string) string {
 	return strings.ToLower(strings.TrimSpace(dn))
-}
-
-func normalizeOU(ou string) string {
-	return strings.ToLower(strings.TrimSpace(ou))
 }
 
 // ─── Grouping Utilities ───
@@ -41,6 +37,16 @@ func GetUniqueDepartments(users []ADUser) []string {
 		}
 	}
 	return mapKeysSorted(deptMap)
+}
+
+func GroupUsersByManager(users []ADUser) map[string][]ADUser {
+	managerMap := make(map[string][]ADUser)
+	for _, user := range users {
+		if user.ManagerDN != "" {
+			managerMap[NormalizeDN(user.ManagerDN)] = append(managerMap[NormalizeDN(user.ManagerDN)], user)
+		}
+	}
+	return managerMap
 }
 
 func mapKeysSorted(m map[string]struct{}) []string {

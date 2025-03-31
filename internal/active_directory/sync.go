@@ -68,12 +68,12 @@ func RemoveUserFromGroup(client *ldapclient.LDAPClient, groupDN, userDN string) 
 func syncGroupMembers(client *ldapclient.LDAPClient, group *ADGroup, users []ADUser, label string, dryRun bool) (int, int, error) {
 	current := make(map[string]struct{})
 	for _, dn := range group.Members {
-		current[normalizeDN(dn)] = struct{}{}
+		current[NormalizeDN(dn)] = struct{}{}
 	}
 
 	desired := make(map[string]ADUser)
 	for _, u := range users {
-		desired[normalizeDN(u.DN)] = u
+		desired[NormalizeDN(u.DN)] = u
 	}
 
 	var toAdd, toRemove []string

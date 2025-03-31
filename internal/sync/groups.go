@@ -8,6 +8,7 @@ import (
 func RunAllGroupSyncs(client *ldapclient.LDAPClient, users []active_directory.ADUser, dryRun bool) error {
 	SyncDepartments(client, users, dryRun)
 	SyncStates(client, users, dryRun)
+	SyncManagers(client, users, dryRun)
 	SyncAllEmployees(client, users, dryRun)
 	return nil
 }

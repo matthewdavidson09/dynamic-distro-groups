@@ -45,22 +45,28 @@ func SyncDepartments(client *ldapclient.LDAPClient, users []active_directory.ADU
 			return
 		}
 
-		// 4. Prepare Google member list
+		// 4. Prepare email and manager map
 		var memberEmails []string
+		managerMap := make(map[string]bool)
 		for _, user := range deptUsers {
-			if user.Email != "" {
-				memberEmails = append(memberEmails, strings.ToLower(user.Email))
+			email := strings.ToLower(strings.TrimSpace(user.Email))
+			if email == "" {
+				continue
+			}
+			memberEmails = append(memberEmails, email)
+			if len(user.DirectReports) > 0 {
+				managerMap[email] = true
 			}
 		}
 
-		// 5. Sync to Google Workspace
+		// 5. Sync to Google Workspace (with roles)
 		svc, err := googleclient.NewDirectoryService(ctx)
 		if err != nil {
 			tools.Log.WithField("dept", dept).Errorf("Failed to create Google Directory client: %v", err)
 			return
 		}
 
-		gAdded, gRemoved, err := SyncGoogleGroup(ctx, svc, groupEmail, groupName, memberEmails, dryRun)
+		gAdded, gRemoved, err := SyncGoogleGroupWithRoles(ctx, svc, groupEmail, groupName, memberEmails, managerMap, dryRun)
 		if err != nil {
 			tools.Log.WithField("dept", dept).Errorf("Google group sync error: %v", err)
 		}
