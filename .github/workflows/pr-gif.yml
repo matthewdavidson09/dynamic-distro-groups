@@ -6,6 +6,7 @@ on:
 
 permissions:
   issues: write  # Needed to post PR comments
+  pull-requests: write
 
 jobs:
   post-gif:
