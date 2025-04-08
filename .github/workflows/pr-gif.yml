@@ -1,0 +1,21 @@
+name: PR GIF Bot
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, closed]
+
+permissions:
+  issues: write  # Needed to post PR comments
+
+jobs:
+  post-gif:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run PR GIF Bot
+        uses: matthewdavidson09/GIFBot@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
