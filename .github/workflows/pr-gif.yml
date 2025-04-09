@@ -19,3 +19,4 @@ jobs:
         uses: matthewdavidson09/GIFBot@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          config_path: gif.json
